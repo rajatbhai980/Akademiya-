@@ -22,4 +22,13 @@ DB_USER
 DB_PASSWORD 
 DB_HOST 
 DB_PORT
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.example.com' # Use your email provider's SMTP host (e.g., smtp.gmail.com)
+EMAIL_PORT = 587 
+EMAIL_USE_TLS = True 
+EMAIL_HOST_USER = 'your_email@example.com' # The email used for SMTP authentication
+EMAIL_HOST_PASSWORD = 'your_app_password' # Use an app password if using services like Gmail
+DEFAULT_FROM_EMAIL = 'support@yourwebsite.com' # The default "From" address
+SERVER_EMAIL = 'support@yourwebsite.com' # Used for error messages to admins
 ```
