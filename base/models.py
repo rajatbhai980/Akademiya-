@@ -1,16 +1,35 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, UserManager, PermissionsMixin
+from django.apps import apps
 
-class Scholar(AbstractBaseUser):
-    username = models.CharField(max_length=50)
+class ScholarManager(UserManager): 
+    def create_superuser(self, email=None, password=None):
+        email = self.normalize_email(email)
+
+        user = self.model(email=email)
+        user.is_superuser=True
+        user.is_staff=True
+        user.set_password(password)
+        user.save(using=self._db)
+
+        return user 
+
+class Scholar(AbstractBaseUser, PermissionsMixin):
+    username = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(unique=True, default='email')
     password = models.CharField(null=True, blank=True)
-    photo = models.ImageField()
+    photo = models.ImageField(null=True, blank=True)
     semester = models.CharField(null=True, blank=True, max_length=20)
     bio = models.CharField(null=True, blank=True, max_length=100)
     subscribed = models.BooleanField(default=False)
     gems = models.IntegerField(default=0)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+
+    objects = ScholarManager()
+    USERNAME_FIELD = 'email'
 
     def __str__(self): 
         return str(self.email)
