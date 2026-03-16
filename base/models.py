@@ -52,7 +52,12 @@ class Performance(models.Model):
     experience = models.IntegerField(default=0)
     attempted = models.IntegerField(default=0)
     correct = models.IntegerField(default=0)
-    correct_ratio = models.DecimalField(default=0, decimal_places=3, max_digits=3)
+    @property
+    def correct_ratio(self): 
+        if self.attempted != 0: 
+            cr = (self.correct / self.attempted) * 100 
+            return cr       
+        return 0 
 
 class Semester(models.Model): 
     name = models.CharField(max_length=40)

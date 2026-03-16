@@ -7,9 +7,10 @@ class ViewProfileSerializer(serializers.ModelSerializer):
         exclude = ['email', 'password', 'is_staff', 'is_active', 'groups', 'user_permissions']
 
 class ViewPerformanceSerializer(serializers.ModelSerializer): 
+    correct_ratio = models.DecimalField()
     class Meta: 
         model = Performance 
-        exclude = ['user']
+        fields = ['id', 'level', 'experience', 'attempted', 'correct', 'correct_ratio']
 
 class ScholarSerializer(serializers.Serializer):
     id = serializers.IntegerField() 
