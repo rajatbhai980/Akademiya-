@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     'base.apps.BaseConfig', 
     'users.apps.UsersConfig',
+    'profiles.apps.ProfilesConfig', 
 
     'allauth',
     'allauth.account',
