@@ -1,0 +1,18 @@
+EnterPage
+
+{
+  "semester": {"name": ""},
+  "subject": {"name": ""},
+  "question_page": {"": ""},
+  "question_answer": {
+    "description": "",
+    "hint": "",
+    "full_explaination": "",
+    "answers": [
+      {"description": "", "correct": },
+      {"description": "", "correct": },
+      {"description": "", "correct": },
+      {"description": "", "correct": }
+    ]
+  }
+}

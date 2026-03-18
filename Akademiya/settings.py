@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'base.apps.BaseConfig', 
     'users.apps.UsersConfig',
     'profiles.apps.ProfilesConfig', 
+    'game.apps.GameConfig', 
+    'admintool.apps.AdmintoolConfig', 
 
     'allauth',
     'allauth.account',

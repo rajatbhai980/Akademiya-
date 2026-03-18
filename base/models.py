@@ -5,6 +5,7 @@ from django.apps import apps
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import date
 
 class ScholarManager(UserManager): 
     def create_superuser(self, email=None, password=None):
@@ -64,18 +65,25 @@ class Semester(models.Model):
 
 class Subject(models.Model):
     name= models.CharField(max_length=40)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='subjects')
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='subjects', null=True)
+
+class QuestionPage(models.Model): 
+    year = models.DateField(default=date.today)
 
 class Question(models.Model): 
     description = models.CharField(max_length=30)
-    subject = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='questions')
-    hint = models.CharField(max_length=40)
-    full_explaination = models.CharField(max_length=100)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='questions', null=True)
+    page = models.ForeignKey(QuestionPage, on_delete=models.CASCADE, related_name='questions', null=True)
+    hint = models.CharField(max_length=40, null=True)
+    full_explaination = models.CharField(max_length=100, null=True)
 
 class Answer(models.Model): 
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers', null=True)
     description = models.CharField(max_length=40)
-    coorect = models.BooleanField()
+    correct = models.BooleanField(default=False)
+
+
+
     
 
 

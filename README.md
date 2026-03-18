@@ -31,4 +31,12 @@ EMAIL_HOST_USER = 'your_email@example.com' # The email used for SMTP authenticat
 EMAIL_HOST_PASSWORD = 'your_app_password' # Use an app password if using services like Gmail
 DEFAULT_FROM_EMAIL = 'support@yourwebsite.com' # The default "From" address
 SERVER_EMAIL = 'support@yourwebsite.com' # Used for error messages to admins
+
+#for allauth google setup google console and add 
+google_client_id 
+google_secret_key
 ```
+
+Backend → Render (free)
+Database → Supabase or Neon (free Postgres)
+Redis → Upstash (free Redis)
