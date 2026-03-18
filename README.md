@@ -10,7 +10,7 @@ I am personally going to use this site.</p>
 <li>Oauth</li>
 <ol>
 <img src='docs/initial_requirements.png'>
-<img src='docs/initial_schema.png'>
+<img src='docs/updated_schema.png'>
 
 --> Create .env.local and add the things listed below. we are using postgresql for database. https://medium.com/django-unleashed/complete-tutorial-set-up-postgresql-database-with-django-application-d9e789ffa384
 ```

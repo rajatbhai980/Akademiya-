@@ -2,6 +2,7 @@ from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework import status
 from base.models import Semester, Subject, QuestionPage, Question, Answer, Scholar
+from datetime import date 
 
 class EnterPageViewTest(APITestCase):
     def setUp(self): 
@@ -72,3 +73,94 @@ class EnterPageViewTest(APITestCase):
         self.client.force_login(user)
         response = self.client.get(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+class DeletePageTest(APITestCase):
+    def setUp(self):
+        self.url = reverse('delete_page', kwargs={'year': '2024-01-01'})
+        self.admin = Scholar.objects.create_superuser(email='admin@gmail.com')
+        self.user = Scholar.objects.create(email='test@gmail.com')
+        QuestionPage.objects.create(year='2024-01-01')
+
+    def test_unauthenticated_gets_401(self):
+        response = self.client.delete(self.url, {'year': '2024-01-01'})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_normal_user_gets_403(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(self.url, {'year': '2024-01-01'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_existing_page(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.delete(self.url, {'year': '2024-01-01'})
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(QuestionPage.objects.filter(year='2024-01-01').exists())
+
+
+class ViewPageAPITestCase(APITestCase):
+    def setUp(self):
+        self.admin_user = Scholar.objects.create_superuser(email='admin@gmail.com')
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.semester = Semester.objects.create(name="Semester 5")
+        self.subject = Subject.objects.create(name="Software Engineering", semester=self.semester)
+
+        # Create QuestionPage
+        self.page = QuestionPage.objects.create(year=date.today())
+
+        # Create Question
+        self.question1 = Question.objects.create(
+            description="What is SDLC?",
+            subject=self.subject,
+            page=self.page,
+            hint="Think software process",
+            full_explaination="Structured process to develop software"
+        )
+
+        self.question2 = Question.objects.create(
+            description="What is Agile?",
+            subject=self.subject,
+            page=self.page,
+            hint="Iterative methodology",
+            full_explaination="Agile is iterative software development"
+        )
+
+        # Create Answers
+        self.answer1_q1 = Answer.objects.create(question=self.question1, description="Structured process", correct=True)
+        self.answer2_q1 = Answer.objects.create(question=self.question1, description="Random coding", correct=False)
+
+        self.answer1_q2 = Answer.objects.create(question=self.question2, description="Iterative", correct=True)
+        self.answer2_q2 = Answer.objects.create(question=self.question2, description="Big bang", correct=False)
+
+    def test_viewpage_get_returns_200(self):
+        url = reverse('view_page', kwargs={'year': date.today().strftime('%Y-%m-%d')})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = response.data
+        # Check semester and subject
+        self.assertIn('semester', data)
+        self.assertEqual(data['semester']['name'], "Semester 5")
+        self.assertIn('subject', data)
+        self.assertEqual(data['subject']['name'], "Software Engineering")
+        self.assertIn('page', data)
+
+        # Check questions and answers
+        self.assertIn('question 1', data)
+        self.assertIn('question 2', data)
+
+        # Check question 1
+        q1_data = data['question 1']['question']
+        self.assertEqual(q1_data['description'], "What is SDLC?")
+        self.assertIn('answer 1', data['question 1'])
+        self.assertEqual(data['question 1']['answer 1']['description'], "Structured process")
+        self.assertTrue(data['question 1']['answer 1']['correct'])
+        self.assertEqual(data['question 1']['answer 2']['description'], "Random coding")
+        self.assertFalse(data['question 1']['answer 2']['correct'])
+
+        # Check question 2
+        q2_data = data['question 2']['question']
+        self.assertEqual(q2_data['description'], "What is Agile?")
+        self.assertIn('answer 1', data['question 2'])
+        self.assertEqual(data['question 2']['answer 1']['description'], "Iterative")
+        self.assertTrue(data['question 2']['answer 1']['correct'])

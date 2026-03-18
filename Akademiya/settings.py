@@ -171,3 +171,10 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 AUTH_USER_MODEL = 'base.Scholar'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ]
+}

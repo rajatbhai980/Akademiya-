@@ -4,7 +4,7 @@ from base.models import *
 class SemesterSerializer(serializers.ModelSerializer): 
     class Meta: 
         model = Semester
-        fields = '__all__'
+        fields = ['name']
 
     def create(self, validated_data):
         name = validated_data.get('name')
@@ -14,7 +14,7 @@ class SemesterSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer): 
     class Meta: 
         model = Subject
-        fields = '__all__'
+        fields = ['name']
 
     def create(self, validated_data):
         name = validated_data.get('name')
@@ -24,7 +24,12 @@ class SubjectSerializer(serializers.ModelSerializer):
 class QuestionPageSerializer(serializers.ModelSerializer): 
     class Meta: 
         model = QuestionPage
-        fields = '__all__'
+        fields = ['year']
+
+    def create(self, validated_data):
+        year = validated_data.get('year')
+        obj, created = QuestionPage.objects.get_or_create(year=year)
+        return obj
 
 class AnswerSerializer(serializers.ModelSerializer): 
     class Meta: 
@@ -35,3 +40,9 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Question
         fields = '__all__'
+
+class QuestionsAnswerSerializer(serializers.ModelSerializer): 
+    class Meta: 
+        model = Answer
+        fields = ['description', 'correct']
+

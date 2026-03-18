@@ -13,7 +13,7 @@ class EnterPage(APIView):
     {
   "semester": {"name": ""},
   "subject": {"name": ""},
-  "question_page": {"": ""},
+  "question_page": {"year": ""},
   "question_answer": {
     "description": "",
     "hint": "",
@@ -77,3 +77,31 @@ class EnterPage(APIView):
                 else: 
                     return Response({'error': answer_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_201_CREATED)
+        
+class ViewPage(APIView): 
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request, year): 
+        page = QuestionPage.objects.prefetch_related('questions__answers').get(year=year)
+        question = page.questions.first()
+        subject = question.subject 
+        semester = subject.semester 
+        Questions = page.questions.all()
+
+        data = {
+            'semester': SemesterSerializer(semester).data, 
+            'subject': SubjectSerializer(subject).data, 
+            'page': QuestionPageSerializer(page).data, 
+        }
+        for i, question in enumerate(Questions, 1): 
+            data[f'question {i}'] = {'question': QuestionSerializer(question).data}
+            Answers = question.answers.all()
+            for j, answer in enumerate(Answers, 1): 
+                data[f'question {i}'][f'answer {j}'] = QuestionsAnswerSerializer(answer).data
+        return Response(data, status=status.HTTP_200_OK)
+
+class DeletePage(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser] 
+    def delete(self, request, year): 
+        page = QuestionPage.objects.get(year=year)  
+        page.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

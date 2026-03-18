@@ -71,11 +71,11 @@ class QuestionPage(models.Model):
     year = models.DateField(default=date.today)
 
 class Question(models.Model): 
-    description = models.CharField(max_length=30)
+    description = models.CharField(max_length=200)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='questions', null=True)
     page = models.ForeignKey(QuestionPage, on_delete=models.CASCADE, related_name='questions', null=True)
-    hint = models.CharField(max_length=40, null=True)
-    full_explaination = models.CharField(max_length=100, null=True)
+    hint = models.CharField(max_length=200, null=True)
+    full_explaination = models.CharField(max_length=400, null=True)
 
 class Answer(models.Model): 
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers', null=True)
