@@ -14,7 +14,8 @@ class EnterPage(APIView):
   "semester": {"name": ""},
   "subject": {"name": ""},
   "question_page": {"year": ""},
-  "question_answer": {
+  "question_answer": [
+    {
     "description": "",
     "hint": "",
     "full_explaination": "",
@@ -24,7 +25,8 @@ class EnterPage(APIView):
       {"description": "", "correct": },
       {"description": "", "correct": }
     ]
-  }
+    }
+  ]
 }
     '''
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -32,13 +34,11 @@ class EnterPage(APIView):
         subject = request.data.get('subject')
         semester = request.data.get('semester')
         question_page = request.data.get('question_page')
-        question = request.data.get('question_answer', {})
-        answers = request.data.get('question_answer', {}).get('answers')
+        questions = request.data.get('question_answer', [])
          
         subject_serializer = SubjectSerializer(data=subject)
         semester_serializer = SemesterSerializer(data=semester)
         question_page_serializer = QuestionPageSerializer(data=question_page)
-        question_serializer = QuestionSerializer(data=question)
 
         errors = {}
         if not semester_serializer.is_valid():
@@ -47,8 +47,6 @@ class EnterPage(APIView):
             errors['subject'] = subject_serializer.errors
         if not question_page_serializer.is_valid():
             errors['question_page'] = question_page_serializer.errors
-        if not question_serializer.is_valid():
-            errors['question'] = question_serializer.errors
 
         if errors: 
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
@@ -61,21 +59,26 @@ class EnterPage(APIView):
             subject.semester = semester
             subject.save() 
 
-            question_page = question_page_serializer.save()
-   
-            question = question_serializer.save()
-            question.page = question_page
-            question.subject = subject
-            question.save()
+            question_page = question_page_serializer.save()           
 
-            for answer in answers: 
-                answer_serializer = AnswerSerializer(data=answer)
-                if answer_serializer.is_valid():
-                    answer = answer_serializer.save()
-                    answer.question = question 
-                    answer.save()
+            for Question in questions: 
+                question_serializer = QuestionSerializer(data=Question)
+                if question_serializer.is_valid(): 
+                    question = question_serializer.save()
+                    question.page = question_page
+                    question.subject = subject
+                    question.save()
+                    answers = Question.get('answers', [])
+                    for answer in answers: 
+                        answer_serializer = AnswerSerializer(data=answer)
+                        if answer_serializer.is_valid():
+                            answer = answer_serializer.save()
+                            answer.question = question 
+                            answer.save()
+                        else: 
+                            return Response({'error': answer_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
                 else: 
-                    return Response({'error': answer_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(question_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_201_CREATED)
         
 class ViewPage(APIView): 
@@ -96,12 +99,12 @@ class ViewPage(APIView):
             data[f'question {i}'] = {'question': QuestionSerializer(question).data}
             Answers = question.answers.all()
             for j, answer in enumerate(Answers, 1): 
-                data[f'question {i}'][f'answer {j}'] = QuestionsAnswerSerializer(answer).data
+                data[f'question {i}'][f'answer {j}'] = AnswerSerializer(answer).data
         return Response(data, status=status.HTTP_200_OK)
 
 class DeletePage(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser] 
-    def delete(self, request, year): 
-        page = QuestionPage.objects.get(year=year)  
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def delete(self, request, year):
+        page = QuestionPage.objects.get(year=year)
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

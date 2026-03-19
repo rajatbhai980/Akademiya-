@@ -13,7 +13,8 @@ class EnterPageViewTest(APITestCase):
   "semester": {"name": "Fall"},
   "subject": {"name": "Mathematics"},
   "question_page": {"year": "2024-03-17"},
-  "question_answer": {
+  "question_answer": [
+      {
     "description": "What is 2 + 2?",
     "hint": "Think about simple addition",
     "full_explaination": "Adding 2 and 2 gives 4 because it is basic arithmetic.",
@@ -23,7 +24,8 @@ class EnterPageViewTest(APITestCase):
       {"description": "3", "correct": False},
       {"description": "4", "correct": True}
     ]
-  }
+      }
+  ]
 }
 
     def test_creates_all_objects(self):
