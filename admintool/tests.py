@@ -13,7 +13,7 @@ class EnterPageViewTest(APITestCase):
   "semester": {"name": "Fall"},
   "subject": {"name": "Mathematics"},
   "question_page": {"year": "2024-03-17"},
-  "question_answer": [
+  "question_answers": [
       {
     "description": "What is 2 + 2?",
     "hint": "Think about simple addition",
@@ -166,3 +166,114 @@ class ViewPageAPITestCase(APITestCase):
         self.assertIn('answer 1', data['question 2'])
         self.assertEqual(data['question 2']['answer 1']['description'], "Iterative")
         self.assertTrue(data['question 2']['answer 1']['correct'])
+
+
+class UpdatePageAPITestCase(APITestCase):
+    def setUp(self):
+        self.admin_user = Scholar.objects.create_superuser(email='admin@gmail.com')
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.semester = Semester.objects.create(name="Semester 5")
+        self.subject = Subject.objects.create(name="Software Engineering", semester=self.semester)
+        self.page = QuestionPage.objects.create(year=date(2024, 3, 17))
+
+        self.question1 = Question.objects.create(
+            description="What is SDLC?",
+            subject=self.subject,
+            page=self.page,
+            hint="Think software process",
+            full_explaination="Structured process to develop software"
+        )
+        self.question2 = Question.objects.create(
+            description="What is Agile?",
+            subject=self.subject,
+            page=self.page,
+            hint="Iterative methodology",
+            full_explaination="Agile is iterative software development"
+        )
+
+        self.answer1_q1 = Answer.objects.create(question=self.question1, description="Structured process", correct=True)
+        self.answer2_q1 = Answer.objects.create(question=self.question1, description="Random coding", correct=False)
+        self.answer1_q2 = Answer.objects.create(question=self.question2, description="Iterative", correct=True)
+        self.answer2_q2 = Answer.objects.create(question=self.question2, description="Big bang", correct=False)
+
+        self.url = reverse('update_page', kwargs={'year': '2024-03-17'})
+        self.valid_payload = {
+            "page": {"year": "2024-03-18"},
+            "subject": {"name": "Advanced Software Engineering"},
+            "semester": {"name": "Semester 6"},
+            "question_answers": [
+                {
+                    "id": self.question1.id,
+                    "description": "What is SDLC updated?",
+                    "hint": "Updated hint",
+                    "full_explaination": "Updated explanation",
+                    "answers": [
+                        {"id": self.answer1_q1.id, "description": "Updated correct", "correct": True},
+                        {"id": self.answer2_q1.id, "description": "Updated wrong", "correct": False}
+                    ]
+                },
+                {
+                    "id": self.question2.id,
+                    "description": "What is Agile updated?",
+                    "hint": "Updated agile hint",
+                    "full_explaination": "Updated agile explanation",
+                    "answers": [
+                        {"id": self.answer1_q2.id, "description": "Updated iterative", "correct": True},
+                        {"id": self.answer2_q2.id, "description": "Updated big bang", "correct": False}
+                    ]
+                }
+            ]
+        }
+
+    def test_update_page_successful(self):
+        response = self.client.put(self.url, data=self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check page updated
+        self.page.refresh_from_db()
+        self.assertEqual(str(self.page.year), "2024-03-18")
+
+        # Check subject updated
+        self.subject.refresh_from_db()
+        self.assertEqual(self.subject.name, "Advanced Software Engineering")
+
+        # Check semester updated
+        self.semester.refresh_from_db()
+        self.assertEqual(self.semester.name, "Semester 6")
+
+        # Check questions updated
+        self.question1.refresh_from_db()
+        self.assertEqual(self.question1.description, "What is SDLC updated?")
+        self.assertEqual(self.question1.hint, "Updated hint")
+
+        self.question2.refresh_from_db()
+        self.assertEqual(self.question2.description, "What is Agile updated?")
+
+        # Check answers updated
+        self.answer1_q1.refresh_from_db()
+        self.assertEqual(self.answer1_q1.description, "Updated correct")
+
+    def test_update_nonexistent_page(self):
+        url = reverse('update_page', kwargs={'year': '2025-01-01'})
+        response = self.client.put(url, data=self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_update_with_invalid_data(self):
+        invalid_payload = self.valid_payload.copy()
+        invalid_payload['semester'] = {"name": ""}  # Invalid empty name
+        response = self.client.put(self.url, data=invalid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('semester_error', response.data)
+
+    def test_unauthenticated_access(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.put(self.url, data=self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_non_admin_access(self):
+        regular_user = Scholar.objects.create(email='user@gmail.com')
+        self.client.force_authenticate(user=regular_user)
+        response = self.client.put(self.url, data=self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
