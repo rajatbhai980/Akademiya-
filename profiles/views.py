@@ -31,3 +31,26 @@ class ViewProfile(APIView):
         }
         serializer =FullProfileSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UpdateProfile(APIView):
+    """
+    Update the authenticated user's profile information.
+
+    Payload structure:
+    {
+        "username": "string",        // Optional: User's display name
+        "photo": "file",             // Optional: Profile photo file
+        "semester": "integer",       // Optional: Academic semester (1-8)
+        "bio": "string"              // Optional: User biography/description
+    }
+
+    All fields are optional. Only provided fields will be updated.
+    """
+    def put(self, request):
+        scholar = Scholar.objects.get(pk=request.user.pk)
+
+        serializer = UpdateProfileSerializer(scholar, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

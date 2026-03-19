@@ -23,3 +23,8 @@ class FullProfileSerializer(serializers.Serializer):
     followee_count = serializers.IntegerField()
     followers = serializers.ListField(child=ScholarSerializer())
     followees = serializers.ListField(child=ScholarSerializer())
+
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Scholar
+        fields = ['username', 'photo', 'semester', 'bio']
