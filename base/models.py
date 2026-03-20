@@ -60,15 +60,31 @@ class Performance(models.Model):
             return cr       
         return 0 
 
+class GameSession(models.Model):
+    user = models.OneToOneField(Scholar, null=True, blank=True, on_delete=models.CASCADE)
+    mode = models.CharField(max_length=50)
+    current_index = models.IntegerField(default=0)
+    status = models.CharField(max_length=20, default="in_progress")
+    last_activity = models.DateTimeField(auto_now=True)
+
+class QuizPlan(models.Model): 
+    game_session = models.OneToOneField(GameSession, on_delete=models.CASCADE)
+
 class Semester(models.Model): 
     name = models.CharField(max_length=40)
 
 class Subject(models.Model):
-    name= models.CharField(max_length=40)
+    name = models.CharField(max_length=40)
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='subjects', null=True)
 
 class QuestionPage(models.Model): 
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='pages', null=True, blank=True)
     year = models.DateField(default=date.today)
+    quiz_plan = models.ForeignKey(QuizPlan, on_delete=models.SET_NULL, null=True, blank=True, related_name='pages')
+
+class PlayerChoices(models.Model): 
+        game_session = models.OneToOneField(GameSession, on_delete=models.CASCADE)
+        page = models.OneToOneField(QuestionPage, on_delete=models.CASCADE)
 
 class Question(models.Model): 
     description = models.CharField(max_length=200)
@@ -76,11 +92,15 @@ class Question(models.Model):
     page = models.ForeignKey(QuestionPage, on_delete=models.CASCADE, related_name='questions', null=True)
     hint = models.CharField(max_length=200, null=True)
     full_explaination = models.CharField(max_length=400, null=True)
+    player_choices = models.ForeignKey(PlayerChoices, on_delete=models.SET_NULL, null=True, blank=True, related_name='questions')
 
 class Answer(models.Model): 
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers', null=True)
     description = models.CharField(max_length=40)
     correct = models.BooleanField(default=False)
+    player_choices = models.ForeignKey(PlayerChoices, on_delete=models.SET_NULL, null=True, blank=True, related_name='answers')
+
+
 
 
 
