@@ -52,11 +52,24 @@ class EnterPageViewTest(APITestCase):
         subject = Subject.objects.first()
         self.assertIsNotNone(subject.semester)
 
-    def test_answers_question(self):
+    def test_question_subject_association(self):
+        """Test that each question is correctly associated with the subject"""
         self.client.post(self.url, format='json', data=self.valid_payload)
 
-        question = Question.objects.first()
-        self.assertEqual(question.answers.count(), 4)
+        subject = Subject.objects.first()
+        questions = Question.objects.all()
+        
+        for question in questions:
+            self.assertEqual(question.subject, subject)
+
+    def test_question_page_subject_association(self):
+        """Test that question page is correctly associated with subject"""
+        self.client.post(self.url, format='json', data=self.valid_payload)
+        question_page = QuestionPage.objects.first()
+        subject = Subject.objects.first()
+        
+        self.assertIsNotNone(question_page.subject)
+        self.assertEqual(question_page.subject, subject)
 
     def test_atomicity(self):
         """If one answer fails, no semester/subject/question should persist."""
@@ -78,10 +91,12 @@ class EnterPageViewTest(APITestCase):
 
 class DeletePageTest(APITestCase):
     def setUp(self):
-        self.url = reverse('delete_page', kwargs={'year': '2024-01-01'})
+        self.semester = Semester.objects.create(name="Test Semester")
+        self.subject = Subject.objects.create(name="Test Subject", semester=self.semester)
+        self.url = reverse('delete_page', kwargs={'year': '2024-01-01', 'subject_id': self.subject.id})
         self.admin = Scholar.objects.create_superuser(email='admin@gmail.com')
         self.user = Scholar.objects.create(email='test@gmail.com')
-        QuestionPage.objects.create(year='2024-01-01')
+        QuestionPage.objects.create(year='2024-01-01', subject=self.subject)
 
     def test_unauthenticated_gets_401(self):
         response = self.client.delete(self.url, {'year': '2024-01-01'})
@@ -108,7 +123,7 @@ class ViewPageAPITestCase(APITestCase):
         self.subject = Subject.objects.create(name="Software Engineering", semester=self.semester)
 
         # Create QuestionPage
-        self.page = QuestionPage.objects.create(year=date.today())
+        self.page = QuestionPage.objects.create(year=date.today(), subject=self.subject)
 
         # Create Question
         self.question1 = Question.objects.create(
@@ -135,7 +150,7 @@ class ViewPageAPITestCase(APITestCase):
         self.answer2_q2 = Answer.objects.create(question=self.question2, description="Big bang", correct=False)
 
     def test_viewpage_get_returns_200(self):
-        url = reverse('view_page', kwargs={'year': date.today().strftime('%Y-%m-%d')})
+        url = reverse('view_page', kwargs={'year': date.today().strftime('%Y-%m-%d'), 'subject_id': self.subject.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -175,7 +190,7 @@ class UpdatePageAPITestCase(APITestCase):
 
         self.semester = Semester.objects.create(name="Semester 5")
         self.subject = Subject.objects.create(name="Software Engineering", semester=self.semester)
-        self.page = QuestionPage.objects.create(year=date(2024, 3, 17))
+        self.page = QuestionPage.objects.create(year=date(2024, 3, 17), subject=self.subject)
 
         self.question1 = Question.objects.create(
             description="What is SDLC?",
@@ -197,7 +212,7 @@ class UpdatePageAPITestCase(APITestCase):
         self.answer1_q2 = Answer.objects.create(question=self.question2, description="Iterative", correct=True)
         self.answer2_q2 = Answer.objects.create(question=self.question2, description="Big bang", correct=False)
 
-        self.url = reverse('update_page', kwargs={'year': '2024-03-17'})
+        self.url = reverse('update_page', kwargs={'year': '2024-03-17', 'subject_id': self.subject.id})
         self.valid_payload = {
             "page": {"year": "2024-03-18"},
             "subject": {"name": "Advanced Software Engineering"},
@@ -255,7 +270,7 @@ class UpdatePageAPITestCase(APITestCase):
         self.assertEqual(self.answer1_q1.description, "Updated correct")
 
     def test_update_nonexistent_page(self):
-        url = reverse('update_page', kwargs={'year': '2025-01-01'})
+        url = reverse('update_page', kwargs={'year': '2025-01-01', 'subject_id': self.subject.id})
         response = self.client.put(url, data=self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)

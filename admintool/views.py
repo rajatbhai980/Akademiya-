@@ -60,6 +60,8 @@ class EnterPage(APIView):
             subject.save() 
 
             question_page = question_page_serializer.save()           
+            question_page.subject = subject 
+            question_page.save()
 
             for Question in questions: 
                 question_serializer = QuestionSerializer(data=Question)
@@ -83,8 +85,13 @@ class EnterPage(APIView):
         
 class ViewPage(APIView): 
     permission_classes = [IsAuthenticated, IsAdminUser]
-    def get(self, request, year): 
-        page = QuestionPage.objects.prefetch_related('questions__answers').get(year=year)
+    def get(self, request, year, subject_id): 
+        try: 
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist: 
+            return Response({'error': 'suject doesnt exists'}, status=status.HTTP_400_BAD_REQUEST) 
+        
+        page = QuestionPage.objects.prefetch_related('questions__answers').get(year=year, subject=subject)
         question = page.questions.first()
         subject = question.subject 
         semester = subject.semester 
@@ -108,14 +115,17 @@ class UpdatePage(APIView):
         page, semester and subjects are queried directly 
         questions and answers and querid through their ids 
     '''
-    def put(self, request, year):
+    def put(self, request, year, subject_id):
         try: 
-            page = QuestionPage.objects.get(year=year)
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist: 
+            return Response({'error': 'subject doesnt not exists'},status=status.HTTP_400_BAD_REQUEST)
+        
+        try: 
+            page = QuestionPage.objects.get(year=year, subject=subject)
         except QuestionPage.DoesNotExist: 
             return Response({'error': 'page doesnt not exists'},status=status.HTTP_400_BAD_REQUEST)
 
-        first_question = page.questions.first()
-        subject = first_question.subject
         semester = subject.semester 
         
         page_data = request.data.get('page')
@@ -170,7 +180,12 @@ class UpdatePage(APIView):
 
 class DeletePage(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
-    def delete(self, request, year):
-        page = QuestionPage.objects.get(year=year)
+    def delete(self, request, year, subject_id):
+        try:
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return Response({'error': 'subject doesnt not exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        page = QuestionPage.objects.get(year=year, subject=subject)
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

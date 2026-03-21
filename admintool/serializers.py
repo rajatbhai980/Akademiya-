@@ -24,7 +24,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 class QuestionPageSerializer(serializers.ModelSerializer): 
     class Meta: 
         model = QuestionPage
-        fields = '__all__'
+        exclude = ['quiz_plans']
 
     def create(self, validated_data):
         year = validated_data.get('year')
