@@ -292,3 +292,47 @@ class UpdatePageAPITestCase(APITestCase):
         self.client.force_authenticate(user=regular_user)
         response = self.client.put(self.url, data=self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ViewSemestersTestCase(APITestCase):
+    def setUp(self):
+        self.admin_user = Scholar.objects.create_superuser(email='admin@gmail.com')
+        self.client.force_authenticate(user=self.admin_user)
+        self.url = reverse('view_semesters')
+
+        self.semester1 = Semester.objects.create(name="Semester 1")
+        self.semester2 = Semester.objects.create(name="Semester 2")
+
+    def test_view_semesters_success(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        semester_names = [semester['name'] for semester in response.data]
+        self.assertIn('Semester 1', semester_names)
+        self.assertIn('Semester 2', semester_names)
+
+
+
+class ViewSubjectsTestCase(APITestCase):
+    def setUp(self):
+        self.admin_user = Scholar.objects.create_superuser(email='admin@gmail.com')
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.semester1 = Semester.objects.create(name="Semester 1")
+        self.semester2 = Semester.objects.create(name="Semester 2")
+        self.subject1 = Subject.objects.create(name="Mathematics", semester=self.semester1)
+        self.subject2 = Subject.objects.create(name="Physics", semester=self.semester1)
+        self.subject3 = Subject.objects.create(name="Chemistry", semester=self.semester2)
+
+    def test_view_subjects_success(self):
+        url = reverse('view_subjects', kwargs={'semester_id': self.semester1.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        subject_names = [subject['name'] for subject in response.data]
+        self.assertIn('Mathematics', subject_names)
+        self.assertIn('Physics', subject_names)
+
+    

@@ -189,3 +189,24 @@ class DeletePage(APIView):
         page = QuestionPage.objects.get(year=year, subject=subject)
         page.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ViewSemesters(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request):
+        semesters = Semester.objects.all()
+        serializer = SemesterSerializer(semesters, many=True)
+        return Response(serializer.data)
+
+
+class ViewSubjects(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request, semester_id):
+        try:
+            semester = Semester.objects.get(id=semester_id)
+            subjects = Subject.objects.filter(semester=semester)
+            serializer = SubjectSerializer(subjects, many=True)
+            return Response(serializer.data)
+        except Semester.DoesNotExist:
+            return Response({'error': 'Semester not found'}, status=status.HTTP_404_NOT_FOUND)
+
