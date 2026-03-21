@@ -80,11 +80,11 @@ class Subject(models.Model):
 class QuestionPage(models.Model): 
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='pages', null=True, blank=True)
     year = models.DateField(default=date.today)
-    quiz_plan = models.ForeignKey(QuizPlan, on_delete=models.SET_NULL, null=True, blank=True, related_name='pages')
+    quiz_plans = models.ManyToManyField(QuizPlan, related_name='pages')
 
 class PlayerChoices(models.Model): 
-        game_session = models.OneToOneField(GameSession, on_delete=models.CASCADE)
-        page = models.OneToOneField(QuestionPage, on_delete=models.CASCADE)
+    game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='player_choices')
+    page = models.OneToOneField(QuestionPage, on_delete=models.CASCADE)
 
 class Question(models.Model): 
     description = models.CharField(max_length=200)
