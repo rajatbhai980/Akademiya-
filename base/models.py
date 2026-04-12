@@ -61,14 +61,15 @@ class Performance(models.Model):
         return 0 
 
 class GameSession(models.Model):
-    user = models.OneToOneField(Scholar, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.OneToOneField(Scholar, null=True, blank=True, on_delete=models.CASCADE, related_name='game_session')
     mode = models.CharField(max_length=50)
     current_index = models.IntegerField(default=0)
+    correct_answers = models.IntegerField(default=0)
     status = models.CharField(max_length=20, default="in_progress")
     last_activity = models.DateTimeField(auto_now=True)
 
 class QuizPlan(models.Model): 
-    game_session = models.OneToOneField(GameSession, on_delete=models.CASCADE)
+    game_session = models.OneToOneField(GameSession, on_delete=models.CASCADE, related_name='quiz_plan')
 
 class Semester(models.Model): 
     name = models.CharField(max_length=40)

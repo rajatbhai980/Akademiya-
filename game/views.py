@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import * 
@@ -41,7 +42,7 @@ class StartGame(APIView):
         mode = request.data.get('mode')
         order = request.data.get('order', 'desc')  # default to desc
         subjects_data = request.data.get('subjects', [])
-        subject_data = request.data.get('subject')
+        subject_data = request.data.get('subject', {})
         total_pages = request.data.get('pages')
 
         if not mode:
@@ -166,3 +167,98 @@ def view_pages_counts(request):
         page_count = QuestionPage.objects.filter(subject=subject).count()
         data[subject_name] = page_count
     return Response(data)
+
+@api_view(['post'])
+def submit_answer(request):
+    """
+    Submit answers for the current game session page and update game progress.
+
+    This function processes user-submitted answers for a specific game session,
+    calculates the number of correct answers, updates the user's performance,
+    and advances to the next page in the quiz.
+
+    **Request Format:**
+    POST /game/submit_answer/
+    {
+        "game_session_id": 1,
+        "answers": [
+            {"answer_id": 1},
+            {"answer_id": 2},
+            ...
+        ]
+    }
+
+    **Parameters:**
+    - game_session_id (int): The ID of the current game session.
+    - answers (list): List of dictionaries containing answer_id for each submitted answer.
+    """
+    answers_data = request.data.get('answers')
+    game_session_id = request.data.get('game_session_id')
+    game_session = GameSession.objects.get(id=game_session_id)
+
+    correct_count = 0
+    for answer_data in answers_data:
+        answer_id = answer_data.get('answer_id')
+        answer = Answer.objects.get(id=answer_id)
+        if answer.correct:
+            correct_count += 1
+
+    game_session.correct_answers += correct_count
+    game_session.current_index += 1
+    game_session.save()
+
+    return Response({'correct_answers': correct_count, 'index_no': game_session.current_index}, status=status.HTTP_200_OK)
+
+@api_view(['get'])
+def view_question_pages(request, game_session_id): 
+    game_session = GameSession.objects.get(id=game_session_id)
+    quiz_plan = game_session.quiz_plan 
+    question_pages = quiz_plan.pages.all()
+    qp_serializers = QuestionPageSerializer(question_pages, many=True)
+
+    return Response(qp_serializers.data, status=status.HTTP_200_OK)
+
+@api_view(['get'])
+def view_question_page_detail(request, page_id):
+    try:
+        question_page = QuestionPage.objects.prefetch_related('questions__answers').get(id=page_id)
+    except QuestionPage.DoesNotExist:
+        return Response({'error': 'QuestionPage not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = QuestionPageDetailSerializer(question_page)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['post']) 
+@permission_classes([IsAuthenticated])
+def display_and_update_performance(request): 
+    scholar = Scholar.objects.get(id=request.user.id)
+    performance = scholar.performance 
+    game_session = scholar.game_session
+    try: 
+        quiz_plan = game_session.quiz_plan
+    except QuizPlan.DoesNotExist:
+        return Response({'error': 'quiz plan doesnt exists!'}, status=status.HTTP_404_NOT_FOUND) 
+    attempted = game_session.current_index * 10 
+    correct = game_session.correct_answers
+    experience = performance.experience 
+    experience += attempted * 10 
+    experience += correct * 30 
+    leveled_up = False 
+    if experience > 1000: 
+        performance.level += 1 
+        experience %= 1000
+        leveled_up = True  
+    performance.experience = experience 
+    performance.attempted += attempted 
+    performance.correct += correct 
+    performance.save()
+    data = {
+        'experience': experience, 
+        'attempted': attempted, 
+        'correct_answers': correct, 
+        'level': performance.level, 
+    }
+    game_session.delete()
+
+    serializer = PerformanceSerializer(data)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
