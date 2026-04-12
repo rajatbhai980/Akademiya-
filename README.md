@@ -37,6 +37,9 @@ google_client_id
 google_secret_key
 ```
 
+docker pull redis 
+docker run --name redis -d -p 6379:6379 redis
+
 Backend → Render (free)
 Database → Supabase or Neon (free Postgres)
 Redis → Upstash (free Redis)
