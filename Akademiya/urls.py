@@ -24,5 +24,6 @@ urlpatterns = [
     path('profiles/', include('profiles.urls')), 
     path('game/', include('game.urls')), 
     path('admintool/', include('admintool.urls')), 
-    path('leaderboard/', include('leaderboard.urls'))
+    path('leaderboard/', include('leaderboard.urls')), 
+    path('store/', include('store.urls'))
 ]

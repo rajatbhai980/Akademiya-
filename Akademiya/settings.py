@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'game.apps.GameConfig', 
     'admintool.apps.AdmintoolConfig', 
     'leaderboard.apps.LeaderboardConfig',
+    'store.apps.StoreConfig',
 
     'allauth',
     'allauth.account',
