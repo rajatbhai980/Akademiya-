@@ -228,6 +228,19 @@ def view_question_page_detail(request, page_id):
     serializer = QuestionPageDetailSerializer(question_page)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+@api_view(['delete'])
+def delete_guest_game_session(request, game_session_id):
+    try:
+        game_session = GameSession.objects.get(id=game_session_id)
+    except GameSession.DoesNotExist:
+        return Response({'error': 'GameSession not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if game_session.user is not None:
+        return Response({'error': 'Only guest sessions can be deleted with this endpoint'}, status=status.HTTP_400_BAD_REQUEST)
+
+    game_session.delete()
+    return Response({'message': 'Guest game session deleted successfully'}, status=status.HTTP_200_OK)
+
 @api_view(['post']) 
 @permission_classes([IsAuthenticated])
 def display_and_update_performance(request): 

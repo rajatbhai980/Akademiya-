@@ -300,6 +300,37 @@ class PerformanceUpdateTestCase(GameViewsTestCase):
         session.refresh_from_db()
         self.assertEqual(session.current_index, 1)
 
+    def test_delete_guest_game_session(self):
+        session = GameSession.objects.create(mode='select')
+        QuizPlan.objects.create(game_session=session)
+
+        url = reverse('delete_guest_game_session', kwargs={'game_session_id': session.id})
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Guest game session deleted successfully')
+
+        with self.assertRaises(GameSession.DoesNotExist):
+            GameSession.objects.get(id=session.id)
+
+    def test_delete_guest_game_session_rejects_authenticated_session(self):
+        scholar = Scholar.objects.create(email='guest@example.com', password='password')
+        session = GameSession.objects.create(user=scholar, mode='select')
+        QuizPlan.objects.create(game_session=session)
+
+        url = reverse('delete_guest_game_session', kwargs={'game_session_id': session.id})
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['error'], 'Only guest sessions can be deleted with this endpoint')
+
+    def test_delete_guest_game_session_not_found(self):
+        url = reverse('delete_guest_game_session', kwargs={'game_session_id': 9999})
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'GameSession not found')
+
 
 
 
