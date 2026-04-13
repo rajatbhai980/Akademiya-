@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from django.contrib.auth import login
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
@@ -50,12 +49,12 @@ def otp_verification(request):
         verification = OTP.objects.filter(otp=otp, email=email).exists()
 
         if verification: 
-            try: 
+            try:
                 user = Scholar.objects.get(email=email)
             except: 
                 user = None
             if user is not None: 
-                login(request, user)
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             else: 
                 new_username = generate_username()
                 new_user = Scholar.objects.create(email=email, username=new_username[0])
