@@ -1,0 +1,413 @@
+# Akademiya API Contract
+
+## Base URL
+- `http://<host>/`
+
+## Authentication
+
+### POST /users/otp_request/
+- Description: Request a one-time password (OTP) for email login.
+- Request Body:
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
+- Response:
+  - `200 OK` on success
+  - `400 Bad Request` if the payload is invalid
+
+### POST /users/otp_verification/
+- Description: Verify the OTP and authenticate the user.
+- Request Body:
+  ```json
+  {
+    "email": "user@example.com",
+    "otp": 123456
+  }
+  ```
+- Response:
+  - `200 OK` on success
+  - `400 Bad Request` if OTP is invalid or payload is invalid
+- Notes: Creates a new `Scholar` if no existing user is found.
+
+### Allauth routes
+- `GET/POST /users/accounts/...`
+- Description: Standard Django Allauth authentication/account management routes.
+- Notes: These are included through `users.urls`.
+
+## Profiles
+
+### GET /profiles/{pk}/
+- Description: Retrieve a scholar profile by `pk`.
+- Parameters:
+  - `pk` (path): profile scholar ID
+- Response Body:
+  ```json
+  {
+    "profile_info": {
+      "id": 1,
+      "username": "john",
+      "photo": "/media/path.jpg",
+      "semester": 3,
+      "bio": "sample bio",
+      "subscribed": false,
+      "gems": 100,
+      "is_staff": false,
+      "is_active": true
+    },
+    "performance_info": {
+      "id": 1,
+      "level": 2,
+      "experience": 120,
+      "attempted": 3,
+      "correct": 2,
+      "correct_ratio": 66.6667
+    },
+    "follower_count": 5,
+    "followee_count": 2,
+    "followers": [
+      {"id": 10, "username": "alice"}
+    ],
+    "followees": [
+      {"id": 12, "username": "bob"}
+    ]
+  }
+  ```
+- Response Codes:
+  - `200 OK` on success
+  - `404 Not Found` if the scholar does not exist
+
+### PUT /profiles/update/
+- Description: Update the authenticated scholar's profile.
+- Authentication: Required
+- Request Body (partial updates allowed):
+  ```json
+  {
+    "username": "newname",
+    "photo": "<uploaded file>",
+    "semester": 4,
+    "bio": "Updated biography"
+  }
+  ```
+- Response:
+  - `200 OK` with updated scholar data
+  - `400 Bad Request` if validation fails
+
+## Store
+
+### POST /store/subscription/
+- Description: Purchase a subscription using gems.
+- Authentication: Required
+- Request Body: none
+- Response Body:
+  ```json
+  {
+    "subscribed": true,
+    "gems": 300
+  }
+  ```
+- Error Responses:
+  - `400 Bad Request` if the scholar has fewer than 700 gems
+  - `200 OK` if already subscribed
+
+## Game
+
+### POST /game/start/
+- Description: Begin a game session and build a quiz plan.
+- Request Body:
+  - `mode` required: one of `select`, `custom`, `all`
+  - `order` optional: `asc` or `desc`
+
+#### select mode
+  ```json
+  {
+    "mode": "select",
+    "subject": {"id": 1, "pages": 5},
+    "order": "desc"
+  }
+  ```
+
+#### custom mode
+  ```json
+  {
+    "mode": "custom",
+    "subjects": [
+      {"id": 1, "pages": 3},
+      {"id": 2, "pages": 4}
+    ],
+    "order": "desc"
+  }
+  ```
+
+#### all mode
+  ```json
+  {
+    "mode": "all",
+    "pages": 10,
+    "order": "desc"
+  }
+  ```
+- Response Body:
+  ```json
+  {
+    "session_id": 5,
+    "quiz_plan_id": 7,
+    "message": "Game started successfully"
+  }
+  ```
+- Error Responses:
+  - `400 Bad Request` when required fields are missing or invalid
+  - `404 Not Found` when referenced subjects do not exist
+
+### GET /game/semesters/
+- Description: Retrieve all semesters.
+- Response Body: array of semesters
+  ```json
+  [
+    {"id": 1, "name": "Semester 1"}
+  ]
+  ```
+
+### GET /game/subjects/{semester_id}/
+- Description: Retrieve subjects for a semester.
+- Path Parameter:
+  - `semester_id` integer
+- Response Body: array of subjects
+  ```json
+  [
+    {"id": 1, "name": "Mathematics"}
+  ]
+  ```
+- Errors:
+  - `404 Not Found` if semester does not exist
+
+### POST /game/pages_counts/
+- Description: Count pages for the requested subjects.
+- Request Body:
+  ```json
+  {
+    "subjects": [
+      {"subject_name": "Mathematics", "id": 1},
+      {"subject_name": "Physics", "id": 2}
+    ]
+  }
+  ```
+- Response Body:
+  ```json
+  {
+    "Mathematics": 12,
+    "Physics": 8
+  }
+  ```
+
+### POST /game/submit_answer/
+- Description: Submit answers for a game session page.
+- Request Body:
+  ```json
+  {
+    "game_session_id": 1,
+    "answers": [
+      {"answer_id": 1},
+      {"answer_id": 2}
+    ]
+  }
+  ```
+- Response Body:
+  ```json
+  {
+    "correct_answers": 1,
+    "index_no": 2
+  }
+  ```
+- Errors:
+  - 400/404 if the session or answers are invalid
+
+### GET /game/view_question_pages/{game_session_id}/
+- Description: Retrieve the question pages assigned to a quiz plan.
+- Response Body: array of question page objects
+  ```json
+  [
+    {"id": 10, "subject": {"id": 1, "name": "Math"}, "year": "2025-01-01"}
+  ]
+  ```
+
+### GET /game/view_question_page/{page_id}/
+- Description: Retrieve full details for a question page.
+- Response Body:
+  ```json
+  {
+    "id": 10,
+    "subject": {"id": 1, "name": "Mathematics"},
+    "year": "2025-01-01",
+    "questions": [
+      {
+        "id": 20,
+        "description": "What is 2+2?",
+        "hint": "Think addition",
+        "full_explaination": "2+2 equals 4",
+        "answers": [
+          {"id": 100, "description": "4", "correct": true},
+          {"id": 101, "description": "3", "correct": false}
+        ]
+      }
+    ]
+  }
+  ```
+- Error Responses:
+  - `404 Not Found` if the `QuestionPage` is missing
+
+### DELETE /game/delete_guest_session/{game_session_id}/
+- Description: Delete guest game sessions only.
+- Response:
+  - `200 OK` on success
+  - `400 Bad Request` if the session belongs to an authenticated user
+  - `404 Not Found` if session is missing
+
+### POST /game/display_and_update_performance/
+- Description: Calculate and update scholar performance after a game.
+- Authentication: Required
+- Response Body:
+  ```json
+  {
+    "experience": 230,
+    "attempted": 20,
+    "correct_answers": 5,
+    "level": 2
+  }
+  ```
+- Notes: Deletes the game session after processing.
+
+## Admin Tool
+> All admin tool endpoints require authenticated admin users.
+
+### POST /admintool/enter_page/
+- Description: Add a semester, subject, question page, questions, and answers.
+- Request Body Example:
+  ```json
+  {
+    "semester": {"name": "Semester 1"},
+    "subject": {"name": "Mathematics"},
+    "question_page": {"year": "2025-01-01"},
+    "question_answers": [
+      {
+        "description": "What is 2+2?",
+        "hint": "Sum two numbers",
+        "full_explaination": "2+2 equals 4",
+        "answers": [
+          {"description": "4", "correct": true},
+          {"description": "3", "correct": false}
+        ]
+      }
+    ]
+  }
+  ```
+- Response:
+  - `201 Created` on success
+  - `400 Bad Request` with validation errors
+
+### GET /admintool/view_page/{year}/{subject_id}/
+- Description: Retrieve a page and its related semester and subject data.
+- Response Body: structured page data with question/answer details.
+
+### PUT /admintool/update_page/{year}/{subject_id}/
+- Description: Update an existing page, subject, semester, questions, and answers.
+- Request Body Example:
+  ```json
+  {
+    "page": {"year": "2025-01-01"},
+    "subject": {"name": "Mathematics"},
+    "semester": {"name": "Semester 1"},
+    "question_answers": [
+      {
+        "id": 20,
+        "description": "Updated question",
+        "hint": "...",
+        "full_explaination": "...",
+        "answers": [
+          {"id": 100, "description": "4", "correct": true}
+        ]
+      }
+    ]
+  }
+  ```
+- Response:
+  - `200 OK` on success
+  - `400 Bad Request` if validation fails
+
+### DELETE /admintool/delete_page/{year}/{subject_id}/
+- Description: Delete a specific question page.
+- Response:
+  - `204 No Content` on success
+
+### GET /admintool/semesters/
+- Description: Retrieve all semesters.
+- Response: list of semesters
+
+### GET /admintool/subjects/{semester_id}/
+- Description: Retrieve subjects for a semester.
+- Error:
+  - `404 Not Found` if semester does not exist
+
+## Leaderboard
+
+### GET /leaderboard/
+- Description: Retrieve the top 10 scholars ordered by performance level.
+- Response Body:
+  ```json
+  [
+    {"username": "john", "level": 10}
+  ]
+  ```
+
+## Data Models Summary
+
+### Scholar
+- `id`
+- `username`
+- `email`
+- `photo`
+- `semester`
+- `bio`
+- `subscribed`
+- `gems`
+- `is_staff`
+- `is_active`
+
+### Performance
+- `level`
+- `experience`
+- `attempted`
+- `correct`
+- `correct_ratio`
+
+### Semester
+- `id`
+- `name`
+
+### Subject
+- `id`
+- `name`
+- `semester`
+
+### QuestionPage
+- `id`
+- `subject`
+- `year` (ISO date)
+
+### Question
+- `id`
+- `description`
+- `hint`
+- `full_explaination`
+- `answers`
+
+### Answer
+- `id`
+- `description`
+- `correct`
+
+## Notes
+- Authentication is required for profile update, store subscription purchase, performance update, and admin tool endpoints.
+- Admin endpoints require admin user privileges.
+- The project includes Django Allauth under `/users/accounts/` for standard account flows.
