@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import * 
 from django.db import transaction
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 
 class EnterPage(APIView):  
@@ -29,8 +28,17 @@ class EnterPage(APIView):
   ]
 }
     '''
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    def get(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
     def post(self, request): 
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_staff:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
         subject = request.data.get('subject')
         semester = request.data.get('semester')
         question_page = request.data.get('question_page')
@@ -84,8 +92,12 @@ class EnterPage(APIView):
             return Response(status=status.HTTP_201_CREATED)
         
 class ViewPage(APIView): 
-    permission_classes = [IsAuthenticated, IsAdminUser]
     def get(self, request, year, subject_id): 
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_staff:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
         try: 
             subject = Subject.objects.get(id=subject_id)
         except Subject.DoesNotExist: 
@@ -110,12 +122,16 @@ class ViewPage(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 class UpdatePage(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
     '''
         page, semester and subjects are queried directly 
         questions and answers and querid through their ids 
     '''
     def put(self, request, year, subject_id):
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_staff:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
         try: 
             subject = Subject.objects.get(id=subject_id)
         except Subject.DoesNotExist: 
@@ -179,8 +195,12 @@ class UpdatePage(APIView):
             
 
 class DeletePage(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
     def delete(self, request, year, subject_id):
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_staff:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             subject = Subject.objects.get(id=subject_id)
         except Subject.DoesNotExist:
@@ -192,16 +212,24 @@ class DeletePage(APIView):
 
 
 class ViewSemesters(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
     def get(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_staff:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
         semesters = Semester.objects.all()
         serializer = SemesterSerializer(semesters, many=True)
         return Response(serializer.data)
 
 
 class ViewSubjects(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
     def get(self, request, semester_id):
+        if not request.user or not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.is_staff:
+            return Response({'detail': 'You do not have permission to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             semester = Semester.objects.get(id=semester_id)
             subjects = Subject.objects.filter(semester=semester)

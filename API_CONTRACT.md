@@ -3,7 +3,33 @@
 ## Base URL
 - `http://<host>/`
 
+## Global Request Guidelines
+- Use `Content-Type: application/json` for JSON bodies.
+- Use `Accept: application/json` for JSON responses.
+- For any frontend request that uses cookies, always send `credentials: include`.
+- For any state-changing request (`POST`, `PUT`, `PATCH`, `DELETE`), include the CSRF token in `X-CSRFToken`.
+- If using cookies, call `GET /users/csrf/` first to populate the CSRF cookie.
+
 ## Authentication
+
+### Authentication model
+- The app uses Django session authentication.
+- Login is handled by OTP flow and maintains a browser cookie session.
+- `GET /users/me/` checks current session state.
+- `POST /users/logout/` clears the session.
+
+### GET /users/csrf/
+- Description: Initialize CSRF protection for the frontend.
+- Request: no body
+- Response:
+  - `200 OK`
+  - Body:
+    ```json
+    {"detail": "CSRF cookie set."}
+    ```
+- Frontend usage:
+  - Call before any authenticated request that changes server state.
+  - The browser will receive a `csrftoken` cookie.
 
 ### POST /users/otp_request/
 - Description: Request a one-time password (OTP) for email login.
@@ -16,6 +42,9 @@
 - Response:
   - `200 OK` on success
   - `400 Bad Request` if the payload is invalid
+- Notes:
+  - The request should include `credentials: include` if the frontend wants to preserve session cookies.
+  - The API sends the OTP email but does not return the OTP in the response.
 
 ### POST /users/otp_verification/
 - Description: Verify the OTP and authenticate the user.
@@ -26,22 +55,90 @@
     "otp": 123456
   }
   ```
-- Response:
+- Response Body on success:
+  ```json
+  {
+    "detail": "Authentication successful.",
+    "authenticated": true,
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "username": "generated_username",
+      "is_staff": false
+    }
+  }
+  ```
+- Response codes:
   - `200 OK` on success
   - `400 Bad Request` if OTP is invalid or payload is invalid
-- Notes: Creates a new `Scholar` if no existing user is found.
+  - `403 Forbidden` if the user account is inactive
+- Notes:
+  - Creates a new `Scholar` if no existing user is found.
+  - The session cookie is set on successful login.
+  - Use `credentials: include` and pass `X-CSRFToken` if the frontend is browser-based.
+
+### GET /users/me/
+- Description: Get the current authenticated user.
+- Response Body:
+  - Authenticated:
+    ```json
+    {
+      "authenticated": true,
+      "user": {
+        "id": 1,
+        "email": "user@example.com",
+        "username": "generated_username",
+        "is_staff": false
+      }
+    }
+    ```
+  - Not authenticated:
+    ```json
+    {
+      "authenticated": false,
+      "user": null
+    }
+    ```
+- Response codes:
+  - `200 OK` when authenticated
+  - `401 Unauthorized` when not authenticated
+- Notes:
+  - Use `credentials: include` so the backend can read the session cookie.
+
+### POST /users/logout/
+- Description: Log out the current user and clear the session.
+- Request Body: none
+- Response Body:
+  ```json
+  {
+    "detail": "Logged out successfully."
+  }
+  ```
+- Response codes:
+  - `200 OK`
+- Notes:
+  - Send `credentials: include` and `X-CSRFToken` when calling from the frontend.
 
 ### Allauth routes
 - `GET/POST /users/accounts/...`
-- Description: Standard Django Allauth authentication/account management routes.
-- Notes: These are included through `users.urls`.
+- Description: Standard Django Allauth authentication and account management endpoints.
+- Notes:
+  - These are available for additional auth methods beyond OTP.
+  - The frontend may use them for email/password, social login, or account management as needed.
+
+## Authenticated request behavior
+- `401 Unauthorized`: returned when the request is not authenticated.
+- `403 Forbidden`: returned when the authenticated user lacks permission.
+- Use `credentials: include` on all requests that rely on session authentication.
+- Set `X-CSRFToken` with the value from the `csrftoken` cookie for POST/PUT/PATCH/DELETE.
 
 ## Profiles
 
 ### GET /profiles/{pk}/
 - Description: Retrieve a scholar profile by `pk`.
+- Authentication: optional
 - Parameters:
-  - `pk` (path): profile scholar ID
+  - `pk` (path): scholar ID
 - Response Body:
   ```json
   {
@@ -74,7 +171,7 @@
     ]
   }
   ```
-- Response Codes:
+- Response codes:
   - `200 OK` on success
   - `404 Not Found` if the scholar does not exist
 
@@ -93,6 +190,8 @@
 - Response:
   - `200 OK` with updated scholar data
   - `400 Bad Request` if validation fails
+- Notes:
+  - Use `credentials: include` and `X-CSRFToken`.
 
 ## Store
 
@@ -110,6 +209,8 @@
 - Error Responses:
   - `400 Bad Request` if the scholar has fewer than 700 gems
   - `200 OK` if already subscribed
+- Notes:
+  - Use `credentials: include` and `X-CSRFToken`.
 
 ## Game
 
@@ -162,7 +263,7 @@
 
 ### GET /game/semesters/
 - Description: Retrieve all semesters.
-- Response Body: array of semesters
+- Response Body:
   ```json
   [
     {"id": 1, "name": "Semester 1"}
@@ -173,7 +274,7 @@
 - Description: Retrieve subjects for a semester.
 - Path Parameter:
   - `semester_id` integer
-- Response Body: array of subjects
+- Response Body:
   ```json
   [
     {"id": 1, "name": "Mathematics"}
@@ -221,11 +322,11 @@
   }
   ```
 - Errors:
-  - 400/404 if the session or answers are invalid
+  - `400 Bad Request` or `404 Not Found` if the session or answers are invalid
 
 ### GET /game/view_question_pages/{game_session_id}/
 - Description: Retrieve the question pages assigned to a quiz plan.
-- Response Body: array of question page objects
+- Response Body:
   ```json
   [
     {"id": 10, "subject": {"id": 1, "name": "Math"}, "year": "2025-01-01"}
@@ -257,7 +358,6 @@
 - Error Responses:
   - `404 Not Found` if the `QuestionPage` is missing
 
-### DELETE /game/delete_guest_session/{game_session_id}/
 - Description: Delete guest game sessions only.
 - Response:
   - `200 OK` on success

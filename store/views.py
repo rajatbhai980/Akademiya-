@@ -1,5 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
@@ -7,8 +6,10 @@ from base.models import Scholar
 
 
 @api_view(['post'])
-@permission_classes([IsAuthenticated])
 def purchase_subscription(request):
+    if not request.user or not request.user.is_authenticated:
+        return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+
     scholar = request.user
 
     if scholar.gems < 700:

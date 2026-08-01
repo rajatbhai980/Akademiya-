@@ -39,7 +39,18 @@ class TestOTP(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         created = Scholar.objects.filter(email=email).exists()
         self.assertTrue(created)
+        self.assertTrue(response.json()['authenticated'])
+        self.assertEqual(response.json()['user']['email'], email)
 
         #checking login 
         response = self.client.post(url, format='json', data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_me_endpoint_returns_current_user(self):
+        user = Scholar.objects.create_user(email='frontend@example.com', username='frontend_user')
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('me'))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['user']['email'], user.email)
