@@ -19,6 +19,11 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+      EMAIL_HOST: localhost
+      EMAIL_PORT: 587
+      EMAIL_USE_TLS: "False"
 
     steps:
       - name: Checkout repository
