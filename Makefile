@@ -1,4 +1,4 @@
-PYTHON ?= env\Scripts\python.exe
+PYTHON ?= python
 MANAGE ?= manage.py
 
 .PHONY: help install migrate run test test-users test-all
