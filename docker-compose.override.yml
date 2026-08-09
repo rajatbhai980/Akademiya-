@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  web:
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./:/code
+    environment:
+      - DEBUG=True
+    restart: no
+    networks:
+      - backend

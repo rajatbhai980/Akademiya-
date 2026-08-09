@@ -134,6 +134,35 @@
 
 ## Profiles
 
+### GET /profiles/search/
+- Description: Search scholars by username or biography.
+- Authentication: optional
+- Query Parameters:
+  - `q` (required): search string to match against `username` or `bio`
+- Response Body:
+  ```json
+  {
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "id": 1,
+        "username": "john",
+        "photo": "/media/path.jpg",
+        "semester": 3,
+        "subscribed": false
+      }
+    ]
+  }
+  ```
+- Response codes:
+  - `200 OK` on success
+  - `200 OK` with an empty `results` array when no query is provided
+- Notes:
+  - The endpoint uses case-insensitive matching for `username` and `bio`.
+  - Results are paginated with a page size of 2.
+
 ### GET /profiles/{pk}/
 - Description: Retrieve a scholar profile by `pk`.
 - Authentication: optional

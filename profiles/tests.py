@@ -25,6 +25,35 @@ class ViewProfileTest(APITestCase):
         self.assertEqual(data['followees'][0]['username'], 'scholar2')
 
 
+class SearchProfileTest(APITestCase):
+    def setUp(self):
+        self.scholar = Scholar.objects.create(
+            username="searchable_user",
+            email="search@example.com",
+            semester=3,
+            bio="A profile for search testing",
+            subscribed=True,
+            gems=150,
+        )
+        self.url = reverse('search_profiles')
+
+    def test_search_returns_limited_profile_fields(self):
+        response = self.client.get(self.url, {'q': 'searchable'})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+
+        result = response.data['results'][0]
+        self.assertEqual(result['id'], self.scholar.id)
+        self.assertEqual(result['username'], self.scholar.username)
+        self.assertEqual(result['semester'], self.scholar.semester)
+        self.assertTrue(result['subscribed'])
+        self.assertNotIn('profile_info', result)
+        self.assertNotIn('performance_info', result)
+        self.assertNotIn('follower_count', result)
+        self.assertNotIn('bio', result)
+
+
 class UpdateProfileTest(APITestCase):
     def setUp(self):
         self.scholar = Scholar.objects.create(
