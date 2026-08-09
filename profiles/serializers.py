@@ -16,6 +16,11 @@ class ScholarSerializer(serializers.Serializer):
     id = serializers.IntegerField() 
     username = serializers.CharField()
 
+class SearchProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Scholar
+        fields = ['id', 'username', 'photo', 'semester', 'subscribed']
+
 class FullProfileSerializer(serializers.Serializer): 
     profile_info = ViewProfileSerializer()
     performance_info = ViewPerformanceSerializer()

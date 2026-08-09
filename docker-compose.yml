@@ -13,6 +13,10 @@ services:
     image: postgres:15
     restart: always
     env_file: .env
+    environment:
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
     ports:
       - "5432:5432"
     volumes:
@@ -20,14 +24,14 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U akademiya_user"]
+      test: ["CMD-SHELL", "pg_isready -U akademiya_user -d akademiya_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   web:
     build: .
-    command: gunicorn akademiya.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn Akademiya.wsgi:application --bind 0.0.0.0:8000
     restart: always
     volumes:
       - ./:/code

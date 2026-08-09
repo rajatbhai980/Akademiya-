@@ -7,6 +7,8 @@ from rest_framework import status
 from .serializers import * 
 from django.db.models import Q
 
+from rest_framework.pagination import PageNumberPagination
+
 class ViewProfile(APIView): 
     def get(self, request, pk):
         scholar = Scholar.objects.get(pk=pk)
@@ -54,3 +56,21 @@ class UpdateProfile(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+def search_profiles(request):
+    query = request.GET.get('q', '')
+    if query:
+        paginator = PageNumberPagination()
+        paginator.page_size = 2
+
+        queryset = Scholar.objects.filter(
+            Q(username__icontains=query) | Q(bio__icontains=query)
+        ).order_by('id')
+    else:
+        queryset = Scholar.objects.none()
+
+    paginated_queryset = paginator.paginate_queryset(queryset, request)
+    serializer = SearchProfileSerializer(paginated_queryset, many=True)
+    return paginator.get_paginated_response(serializer.data)

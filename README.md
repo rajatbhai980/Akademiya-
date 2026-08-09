@@ -40,6 +40,10 @@ google_secret_key
 docker pull redis 
 docker run --name redis -d -p 6379:6379 redis
 
+docker compose up --build
+
+This project includes `docker-compose.override.yml` for local development. It mounts the current repository into the container so code changes are reflected immediately.
+
 Backend → Render (free)
 Database → Supabase or Neon (free Postgres)
 Redis → Upstash (free Redis)
