@@ -24,17 +24,18 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U akademiya_user -d akademiya_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   web:
     build: .
-    command: gunicorn Akademiya.wsgi:application --bind 0.0.0.0:8000
-    restart: always
+    working_dir: /code
+    command: python manage.py runserver 0.0.0.0:8000
+    restart: "no"
     volumes:
-      - ./:/code
+      - .:/code
     ports:
       - "8000:8000"
     env_file: .env
