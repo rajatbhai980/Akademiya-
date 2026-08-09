@@ -24,17 +24,18 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U akademiya_user -d akademiya_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   web:
     build: .
-    command: gunicorn Akademiya.wsgi:application --bind 0.0.0.0:8000
-    restart: always
+    working_dir: /code
+    command: python manage.py runserver 0.0.0.0:8000
+    restart: "no"
     volumes:
-      - ./:/code
+      - .:/code
     ports:
       - "8000:8000"
     env_file: .env
@@ -45,29 +46,6 @@ services:
         condition: service_started
     networks:
       - backend
-    environment:
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY}                    # your own value
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}               # your Railway domain (or AWS domain later)
-
-      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-      - EMAIL_HOST=${EMAIL_HOST}                     # your SMTP provider
-      - EMAIL_PORT=587
-      - EMAIL_USE_TLS=True
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
-
-      # Railway: reference Postgres plugin vars (Add Reference in dashboard)
-      # AWS later: replace with your RDS endpoint/credentials
-      - DB_NAME=${{Postgres.PGDATABASE}}
-      - DB_USER=${{Postgres.PGUSER}}
-      - DB_PASSWORD=${{Postgres.PGPASSWORD}}
-      - DB_HOST=${{Postgres.PGHOST}}
-      - DB_PORT=${{Postgres.PGPORT}}
-
-      # Railway: reference Redis plugin var
-      # AWS later: replace with your ElastiCache endpoint
-      - REDIS_URL=${{Redis.REDIS_URL}}
 
 volumes:
   db_data:

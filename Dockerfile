@@ -21,4 +21,4 @@ COPY entrypoint.sh /code/entrypoint.sh
 RUN chmod +x /code/entrypoint.sh
 
 ENTRYPOINT ["/code/entrypoint.sh"]
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD gunicorn Akademiya.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2

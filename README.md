@@ -101,7 +101,7 @@ Open `http://127.0.0.1:8000`
 
 ## Docker Setup
 
-This project includes `docker-compose.yml` and `docker-compose.override.yml` for local development.
+This project uses a single `docker-compose.yml` file for local development.
 
 Start with:
 
@@ -111,13 +111,11 @@ docker compose up --build
 
 This launches:
 
-- `web`: Django application served by Gunicorn
+- `web`: Django application running in development mode
 - `db`: PostgreSQL database
 - `redis`: Redis cache
 
-### Local Docker development
-
-`docker-compose.override.yml` overrides the web service command to run Django in development mode and mounts the repository into the container so code changes are reflected immediately.
+The web service mounts the repository into the container so code changes are reflected immediately.
 
 ## Deployment Notes
 
@@ -185,8 +183,7 @@ docker compose up --build
 - `base/` – core app with models, permissions, views, and serializers
 - `users/`, `profiles/`, `game/`, `leaderboard/`, `store/`, `admintool/` – feature apps
 - `requirements.txt` – Python dependencies
-- `docker-compose.yml` – production-ready Docker Compose config
-- `docker-compose.override.yml` – local development override
+- `docker-compose.yml` – local development Docker Compose config
 
 ## Images
 
