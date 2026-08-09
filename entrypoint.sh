@@ -28,4 +28,8 @@ done
 echo "Postgres is up - running migrations"
 python manage.py migrate --noinput
 
+if [ "$DJANGO_SUPERUSER_EMAIL" ]; then
+  python manage.py createsuperuser --no-input || true
+fi
+
 exec "$@"
