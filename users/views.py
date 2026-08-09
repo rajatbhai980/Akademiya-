@@ -17,6 +17,10 @@ from .models import OTP
 from .serializers import EmailSerializer, OTPSerializer
 from base.models import Scholar
 
+import resend
+
+resend.api_key = settings.RESEND_API_KEY
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,13 +62,13 @@ def otp_request(request):
     OTP.objects.create(email=email, otp=otp)
 
     try:
-        send_mail(
-            'Akademiya OTP',
-            f'Your OTP is {otp}',
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=True,
-        )
+        resend.Emails.send({
+            "from": "onboarding@resend.dev",
+            "to": email,
+            "subject": 'Akademiya OTP',
+            "html": f"<p>Your OTP is <strong>{otp}</strong></p>"
+            })
+
     except Exception as exc:
         logger.exception('Failed to send OTP email to %s', email)
 
