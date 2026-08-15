@@ -220,6 +220,8 @@ CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
 SESSION_COOKIE_SECURE = get_env_bool('SESSION_COOKIE_SECURE', False)
 CSRF_COOKIE_SECURE = get_env_bool('CSRF_COOKIE_SECURE', False)
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 if 'test' in sys.argv:
     CACHES = {
         'default': {
