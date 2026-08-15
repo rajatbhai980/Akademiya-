@@ -44,8 +44,11 @@ def serialize_user(user):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def csrf_cookie(request):
-    get_token(request)
-    return Response({'detail': 'CSRF cookie set.'}, status=status.HTTP_200_OK)
+    token = get_token(request)
+    return Response(
+        {'detail': 'CSRF cookie set.', 'csrfToken': token},
+        status=status.HTTP_200_OK
+    )
 
 
 @api_view(['POST'])
