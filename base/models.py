@@ -23,7 +23,7 @@ class Scholar(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(unique=True, default='email')
     password = models.CharField(null=True, blank=True)
-    photo = models.ImageField(null=True, blank=True)
+    photo = models.ImageField(upload_to='photos/%Y/%m/%d/', null=True, blank=True)
     semester = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(8)])
     bio = models.CharField(null=True, blank=True, max_length=100)
     subscribed = models.BooleanField(default=False)

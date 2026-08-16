@@ -28,7 +28,7 @@ compose-up:
 	docker compose up --build
 
 compose-dev:
-	docker compose up --build
+	docker compose up -d
 
 start: compose-dev
 

@@ -17,6 +17,7 @@ class ScholarSerializer(serializers.Serializer):
     username = serializers.CharField()
 
 class SearchProfileSerializer(serializers.ModelSerializer):
+    photo = serializers.ImageField(use_url=True)
     class Meta:
         model = Scholar
         fields = ['id', 'username', 'photo', 'semester', 'subscribed']
@@ -30,6 +31,7 @@ class FullProfileSerializer(serializers.Serializer):
     followees = serializers.ListField(child=ScholarSerializer())
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
+    photo = serializers.ImageField(use_url=True)
     class Meta:
         model = Scholar
         fields = ['username', 'photo', 'semester', 'bio']
