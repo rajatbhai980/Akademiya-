@@ -31,7 +31,16 @@ class FullProfileSerializer(serializers.Serializer):
     followees = serializers.ListField(child=ScholarSerializer())
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
-    photo = serializers.ImageField(use_url=True)
+    photo = serializers.ImageField(use_url=True, allow_null=True, required=False)
+
     class Meta:
         model = Scholar
         fields = ['username', 'photo', 'semester', 'bio']
+        
+        # Configure the other three fields to accept null and be optional
+        extra_kwargs = {
+            'username': {'allow_null': True, 'required': False},
+            'semester': {'allow_null': True, 'required': False},
+            'bio': {'allow_null': True, 'required': False},
+        }
+
