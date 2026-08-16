@@ -269,3 +269,5 @@ CLOUDINARY_STORAGE = {
 }
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+DEFAULT_AVATAR = 'https://res.cloudinary.com/v8wihhm4/image/upload/v1/default'

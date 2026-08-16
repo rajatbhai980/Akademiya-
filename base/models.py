@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date
+from Akademiya import settings
 
 class ScholarManager(UserManager): 
     def create_superuser(self, email=None, password=None):
@@ -23,7 +24,7 @@ class Scholar(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(unique=True, default='email')
     password = models.CharField(null=True, blank=True)
-    photo = models.ImageField(upload_to='photos/%Y/%m/%d/', null=True, blank=True)
+    photo = models.ImageField(upload_to='photos/%Y/%m/%d/', null=True, blank=True, default=settings.DEFAULT_AVATAR)
     semester = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(8)])
     bio = models.CharField(null=True, blank=True, max_length=100)
     subscribed = models.BooleanField(default=False)
